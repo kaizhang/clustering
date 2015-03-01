@@ -19,6 +19,7 @@ module AI.Clustering.Hierarchical
     , dendrogram
     , nnChain
     , computeDists
+    , averageUpdate
     , euclidean
     ) where
 
@@ -35,7 +36,7 @@ type DistFn a = a -> a -> Distance
 type Size = Int
 
 -- upper triangular matrix
-data DistanceMat = DistanceMat !Int !(U.Vector Double)
+data DistanceMat = DistanceMat !Int !(U.Vector Double) deriving (Show)
 
 (!) :: DistanceMat -> (Int, Int) -> Double
 (!) (DistanceMat n v) (i',j') = v U.! idx i' j'
@@ -64,10 +65,13 @@ size (Branch n _ _ _) = n
 {-# INLINE size #-}
 
 dendrogram :: G.Vector v a => Metric -> v a -> DistFn a -> Dendrogram a
-dendrogram method xs f = fmap label $ nnChain dists method
+dendrogram method xs f = fmap label $ nnChain dists fn
   where
     dists = computeDists f xs
     label i = xs G.! i
+    fn = case method of
+        Average -> averageUpdate
+        _ -> undefined
 
 computeDists :: G.Vector v a => DistFn a -> v a -> DistanceMat
 computeDists f vec = DistanceMat n . U.fromList . flip concatMap [0..n-1] $ \i ->
@@ -76,8 +80,10 @@ computeDists f vec = DistanceMat n . U.fromList . flip concatMap [0..n-1] $ \i -
     n = G.length vec
 {-# INLINE computeDists #-}
 
-nnChain :: DistanceMat -> Metric -> Dendrogram Int
-nnChain dist method = go dist initSet []
+type DistUpdateFn = Int -> Int -> Size -> Size -> DistanceMat -> DistanceMat
+
+nnChain :: DistanceMat -> DistUpdateFn -> Dendrogram Int
+nnChain (DistanceMat n dist) fn = go (DistanceMat n $ U.force dist) initSet []
   where
     go ds activeNodes chain@(b:a:rest)
         | M.size activeNodes == 1 = head . M.elems $ activeNodes
@@ -87,7 +93,7 @@ nnChain dist method = go dist initSet []
         (c,d) = nearestNeighbor ds b a activeNodes
         activeNodes' = M.insert hi (Branch (size1+size2) d c1 c2)
                      . M.delete lo $ activeNodes
-        ds' = updateDistMat lo hi size1 size2 method ds
+        ds' = fn lo hi size1 size2 ds
         c1 = M.findWithDefault undefined lo activeNodes
         c2 = M.findWithDefault undefined hi activeNodes
         size1 = size c1
@@ -98,7 +104,6 @@ nnChain dist method = go dist initSet []
         a = fst $ M.elemAt 0 activeNodes
         b = fst $ nearestNeighbor ds a (-1) activeNodes
     initSet = M.fromList . map (\i -> (i, Leaf i)) $ [0..n-1]
-    n = dim dist
 {-# INLINE nnChain #-}
 
 nearestNeighbor :: DistanceMat -> Int -> Int -> M.Map Int (Dendrogram Int) -> (Int, Double)
@@ -111,20 +116,18 @@ nearestNeighbor dist i preference m = foldl' f (-1,1/0) . M.keys $ m
       where d' = dist ! (i,x)
 {-# INLINE nearestNeighbor #-}
 
-updateDistMat :: Int -> Int -> Size -> Size -> Metric -> DistanceMat -> DistanceMat
-updateDistMat lo hi s1 s2 method (DistanceMat n dist) = case method of
-    Average -> DistanceMat n $ U.create $ do
-        v <- U.unsafeThaw dist
-        forM_ [0..n-1] $ \i -> when (i /= lo && i/= hi) $ do
-            d_lo_i <- UM.unsafeRead v $ idx i lo
-            d_hi_i <- UM.unsafeRead v $ idx i hi
-            UM.unsafeWrite v (idx i hi) $ (fromIntegral s1 * d_lo_i + fromIntegral s2 * d_hi_i) / (fromIntegral s1 + fromIntegral s2)
-        return v
-    _ -> undefined
+averageUpdate :: Int -> Int -> Size -> Size -> DistanceMat -> DistanceMat
+averageUpdate lo hi s1 s2 (DistanceMat n dist) = DistanceMat n $ U.create $ do
+    v <- U.unsafeThaw dist
+    forM_ [0..n-1] $ \i -> when (i /= lo && i/= hi) $ do
+        d_lo_i <- UM.unsafeRead v $ idx i lo
+        d_hi_i <- UM.unsafeRead v $ idx i hi
+        UM.unsafeWrite v (idx i hi) $ (fromIntegral s1 * d_lo_i + fromIntegral s2 * d_hi_i) / (fromIntegral s1 + fromIntegral s2)
+    return v
   where
     idx i j | i <= j = (i * (2 * n - i - 3)) `shiftR` 1 + j - 1
             | otherwise = idx j i
-{-# INLINE updateDistMat #-}
+{-# INLINE averageUpdate #-}
 
 euclidean :: G.Vector v Double => DistFn (v Double)
 euclidean xs ys = sqrt $ G.sum $ G.zipWith (\x y -> (x-y)**2) xs ys
