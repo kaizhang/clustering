@@ -17,10 +17,13 @@ module AI.Clustering.Hierarchical
     ( Dendrogram(..)
     , Metric(..)
     , dendrogram
+    , nnChain
+    , computeDists
     , euclidean
     ) where
 
 import Control.Monad (forM_, when)
+import Data.Bits (shiftR)
 import Data.List (foldl')
 import qualified Data.Map as M
 import qualified Data.Vector.Generic as G
@@ -37,7 +40,7 @@ data DistanceMat = DistanceMat !Int !(U.Vector Double)
 (!) :: DistanceMat -> (Int, Int) -> Double
 (!) (DistanceMat n v) (i',j') = v U.! idx i' j'
   where
-    idx i j | i <= j = i * (2 * n - i - 3) `div` 2 + j - 1
+    idx i j | i <= j = (i * (2 * n - i - 3)) `shiftR` 1 + j - 1
             | otherwise = idx j i
 
 dim :: DistanceMat -> Int
@@ -47,8 +50,8 @@ dim (DistanceMat n _) = n
 data Metric = Single
             | Average
 
-data Dendrogram a = Leaf a
-                  | Branch !Size !Distance (Dendrogram a) (Dendrogram a)
+data Dendrogram a = Leaf !a
+                  | Branch !Size !Distance !(Dendrogram a) !(Dendrogram a)
     deriving (Show)
 
 instance Functor Dendrogram where
@@ -119,7 +122,7 @@ updateDistMat lo hi s1 s2 method (DistanceMat n dist) = case method of
         return v
     _ -> undefined
   where
-    idx i j | i <= j = i * (2 * n - i - 3) `div` 2 + j - 1
+    idx i j | i <= j = (i * (2 * n - i - 3)) `shiftR` 1 + j - 1
             | otherwise = idx j i
 {-# INLINE updateDistMat #-}
 
