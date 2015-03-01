@@ -42,6 +42,7 @@ data DistanceMat = DistanceMat !Int !(U.Vector Double)
 
 dim :: DistanceMat -> Int
 dim (DistanceMat n _) = n
+{-# INLINE dim #-}
 
 data Metric = Single
             | Average
@@ -95,6 +96,7 @@ nnChain dist method = go dist initSet []
         b = fst $ nearestNeighbor ds a (-1) activeNodes
     initSet = M.fromList . map (\i -> (i, Leaf i)) $ [0..n-1]
     n = dim dist
+{-# INLINE nnChain #-}
 
 nearestNeighbor :: DistanceMat -> Int -> Int -> M.Map Int (Dendrogram Int) -> (Int, Double)
 nearestNeighbor dist i preference m = foldl' f (-1,1/0) . M.keys $ m

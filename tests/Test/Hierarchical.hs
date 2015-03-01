@@ -18,7 +18,7 @@ tests = testGroup "Hierarchical:"
 randSample :: IO [V.Vector Double]
 randSample = do
     g <- create
-    replicateM 100 $ uniformVector g 5
+    replicateM 500 $ uniformVector g 5
 
 isEqual :: Eq a => Dendrogram a -> C.Dendrogram a -> Bool
 isEqual (Leaf x) (C.Leaf x') = x == x'
