@@ -15,15 +15,19 @@
 
 module AI.Clustering.Hierarchical
     ( Dendrogram(..)
+    , size
+    , cutAt
+    , members
     , Metric(..)
     , hclust
     , computeDists
     , euclidean
     , nnChain
-    , average
     , complete
+    , average
     ) where
 
+import Control.Applicative ((<$>))
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 
@@ -31,14 +35,17 @@ import AI.Clustering.Hierarchical.Internal
 import AI.Clustering.Hierarchical.Types
 
 hclust :: G.Vector v a => Metric -> v a -> DistFn a -> Dendrogram a
-hclust method xs f = fmap label $ nnChain dists fn
+hclust method xs f = label <$> nnChain dists fn
   where
     dists = computeDists f xs
     label i = xs G.! i
     fn = case method of
-        Average -> average
+        Single -> single
         Complete -> complete
-        _ -> undefined
+        Average -> average
+        Weighted -> weighted
+        Ward -> ward
+        _ -> error "Not implemented"
 
 computeDists :: G.Vector v a => DistFn a -> v a -> DistanceMat
 computeDists f vec = DistanceMat n . U.fromList . flip concatMap [0..n-1] $ \i ->

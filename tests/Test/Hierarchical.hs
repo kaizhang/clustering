@@ -13,8 +13,10 @@ import AI.Clustering.Hierarchical
 
 tests :: TestTree
 tests = testGroup "Hierarchical:"
-    [ testCase "Average Linkage" testAverage
+    [ testCase "Single Linkage" testSingle
     , testCase "Complete Linkage" testComplete
+    , testCase "Average Linkage" testAverage
+    , testCase "Weighted Linkage" testWeighted
     ]
 
 randSample :: IO [V.Vector Double]
@@ -28,11 +30,11 @@ isEqual (Branch _ d x y) (C.Branch d' x' y') = abs (d - d') < 1e-8 &&
     ((isEqual x x' && isEqual y y') || (isEqual x y' && isEqual y x'))
 isEqual _ _ = False
 
-testAverage :: Assertion
-testAverage = do
+testSingle :: Assertion
+testSingle = do
     xs <- randSample
-    let true = C.dendrogram C.UPGMA xs euclidean
-        test = hclust Average (V.fromList xs) euclidean
+    let true = C.dendrogram C.SingleLinkage xs euclidean
+        test = hclust Single (V.fromList xs) euclidean
     assertBool (unlines ["Expect: ", show true, "But see: ", show test]) $
         isEqual test true
 
@@ -43,3 +45,20 @@ testComplete = do
         test = hclust Complete (V.fromList xs) euclidean
     assertBool (unlines ["Expect: ", show true, "But see: ", show test]) $
         isEqual test true
+
+testAverage :: Assertion
+testAverage = do
+    xs <- randSample
+    let true = C.dendrogram C.UPGMA xs euclidean
+        test = hclust Average (V.fromList xs) euclidean
+    assertBool (unlines ["Expect: ", show true, "But see: ", show test]) $
+        isEqual test true
+
+testWeighted :: Assertion
+testWeighted = do
+    xs <- randSample
+    let true = C.dendrogram C.FakeAverageLinkage xs euclidean
+        test = hclust Weighted (V.fromList xs) euclidean
+    assertBool (unlines ["Expect: ", show true, "But see: ", show test]) $
+        isEqual test true
+

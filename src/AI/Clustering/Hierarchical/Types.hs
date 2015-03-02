@@ -5,6 +5,8 @@ module AI.Clustering.Hierarchical.Types
     , Metric(..)
     , Dendrogram(..)
     , size
+    , cutAt
+    , members
     , DistanceMat(..)
     , (!)
     , idx
@@ -21,6 +23,9 @@ data Metric = Single
             | Complete
             | Average
             | Weighted
+            | Ward
+            | Centroid
+            | Median
 
 data Dendrogram a = Leaf !a
                   | Branch !Size !Distance !(Dendrogram a) !(Dendrogram a)
@@ -28,12 +33,23 @@ data Dendrogram a = Leaf !a
 
 instance Functor Dendrogram where
     fmap f (Leaf x) = Leaf $ f x
-    fmap f (Branch n d a b) = Branch n d (fmap f a) $ fmap f b
+    fmap f (Branch n d l r) = Branch n d (fmap f l) $ fmap f r
 
 size :: Dendrogram a -> Int
 size (Leaf _) = 1
 size (Branch n _ _ _) = n
 {-# INLINE size #-}
+
+cutAt :: Dendrogram a -> Distance -> [Dendrogram a]
+cutAt dendro th = go [] dendro
+  where
+    go acc x@(Leaf _) = x : acc
+    go acc x@(Branch _ d l r) | d <= th = x : acc
+                              | otherwise = go (go acc r) l
+
+members :: Dendrogram a -> [a]
+members (Leaf x) = [x]
+members (Branch _ _ l r) = members l ++ members r
 
 -- upper triangular matrix
 data DistanceMat = DistanceMat !Int !(U.Vector Double) deriving (Show)
