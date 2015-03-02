@@ -18,9 +18,11 @@ cabal-version:       >=1.10
 library
   exposed-modules:     
     AI.Clustering.Hierarchical
+    AI.Clustering.Hierarchical.Types
 
-  -- other-modules:       
-  -- other-extensions:    
+  other-modules:       
+    AI.Clustering.Hierarchical.Internal
+
   build-depends:
       base >=4.0 && <5.0
     , vector
