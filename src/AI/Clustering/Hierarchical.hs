@@ -22,9 +22,6 @@ module AI.Clustering.Hierarchical
     , hclust
     , computeDists
     , euclidean
-    , nnChain
-    , complete
-    , average
     ) where
 
 import Control.Applicative ((<$>))
@@ -33,6 +30,14 @@ import qualified Data.Vector.Unboxed as U
 
 import AI.Clustering.Hierarchical.Internal
 import AI.Clustering.Hierarchical.Types
+
+data Metric = Single    -- ^ Single linkage, $d(A,B) = min_{a \in A, b \in B} d(a,b)$.
+            | Complete  -- ^ Complete linkage, $d(A,B) = max_{a \in A, b \in B} d(a,b)$.
+            | Average   -- ^ Average linkage, $d(A,B) = \frac{\sum_{a \in A}\sum_{b \in B}d(a,b)}{|A||B|}$.
+            | Weighted  -- ^ Weighted linkage
+            | Ward      -- ^ Ward's method
+            | Centroid  -- ^ Centroid linkage, not implemented
+            | Median    -- ^ Median linkage, not implemented
 
 hclust :: G.Vector v a => Metric -> v a -> DistFn a -> Dendrogram a
 hclust method xs f = label <$> nnChain dists fn

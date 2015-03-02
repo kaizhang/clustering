@@ -3,13 +3,15 @@
 
 name:                clustering
 version:             0.1.0
--- synopsis:            
--- description:         
+synopsis:            fast clustering algorithms
+description:         O(N^2) implementations for a wide range of hierarchical
+                     clustering schemes, including complete linkage, single linkage,
+                     average linkage, weighted linkage, and Ward's method.
 license:             MIT
 license-file:        LICENSE
 author:              Kai Zhang
 maintainer:          kai@kzhang.org
--- copyright:           
+copyright:           (c) 2015 Kai Zhang
 category:            Math
 build-type:          Simple
 -- extra-source-files:  

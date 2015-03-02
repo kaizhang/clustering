@@ -5,27 +5,29 @@ import qualified Data.Vector as V
 import System.Random.MWC
 
 import AI.Clustering.Hierarchical
+import AI.Clustering.Hierarchical.Types ((!))
 
 randSample :: IO [V.Vector Double]
 randSample = do
     g <- create
-    replicateM 10000 $ uniformVector g 5
+    replicateM 2000 $ uniformVector g 5
 
 main :: IO ()
 main = do
     xs <- randSample
+    let dists = computeDists euclidean $ V.fromList xs
+        fn i j = dists ! (i,j)
     defaultMain
-      [ bgroup "Hierarchical clustering:"
+      [ bgroup "AI.Clustering.Hierarchical"
           [ bench "Average Linkage (n = 10)" $
-                whnf (\x -> nnChain x average) $! computeDists euclidean . V.fromList . take 10 $ xs
+                whnf (\x -> hclust Average x fn) $! V.enumFromN 0 10
           , bench "Average Linkage (n = 100)" $
-                whnf (\x -> nnChain x average) $! computeDists euclidean . V.fromList . take 100 $ xs
+                whnf (\x -> hclust Average x fn) $! V.enumFromN 0 100
           , bench "Average Linkage (n = 1000)" $
-                whnf (\x -> nnChain x average) $! computeDists euclidean . V.fromList . take 1000 $ xs
+                whnf (\x -> hclust Average x fn) $! V.enumFromN 0 1000
           ]
 
-{-
-      , bgroup "Hierarchical clustering (slow):"
+      , bgroup "Data.Clustering.Hierarchical"
           [ bench "Average Linkage (n = 10)" $
                 whnf (\x -> C.dendrogram C.UPGMA x euclidean) $! take 10 xs
           , bench "Average Linkage (n = 100)" $
@@ -33,6 +35,4 @@ main = do
           , bench "Average Linkage (n = 1000)" $
                 whnf (\x -> C.dendrogram C.UPGMA x euclidean) $! take 1000 xs
           ]
--}
-
       ]

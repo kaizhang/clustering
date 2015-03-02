@@ -2,7 +2,6 @@ module AI.Clustering.Hierarchical.Types
     ( Distance
     , DistFn
     , Size
-    , Metric(..)
     , Dendrogram(..)
     , size
     , cutAt
@@ -18,14 +17,6 @@ import qualified Data.Vector.Unboxed as U
 type Distance = Double
 type DistFn a = a -> a -> Distance
 type Size = Int
-
-data Metric = Single
-            | Complete
-            | Average
-            | Weighted
-            | Ward
-            | Centroid
-            | Median
 
 data Dendrogram a = Leaf !a
                   | Branch !Size !Distance !(Dendrogram a) !(Dendrogram a)
