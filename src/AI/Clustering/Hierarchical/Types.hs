@@ -4,8 +4,6 @@ module AI.Clustering.Hierarchical.Types
     , Size
     , Dendrogram(..)
     , size
-    , cutAt
-    , members
     , DistanceMat(..)
     , (!)
     , idx
@@ -30,17 +28,6 @@ size :: Dendrogram a -> Int
 size (Leaf _) = 1
 size (Branch n _ _ _) = n
 {-# INLINE size #-}
-
-cutAt :: Dendrogram a -> Distance -> [Dendrogram a]
-cutAt dendro th = go [] dendro
-  where
-    go acc x@(Leaf _) = x : acc
-    go acc x@(Branch _ d l r) | d <= th = x : acc
-                              | otherwise = go (go acc r) l
-
-members :: Dendrogram a -> [a]
-members (Leaf x) = [x]
-members (Branch _ _ l r) = members l ++ members r
 
 -- upper triangular matrix
 data DistanceMat = DistanceMat !Int !(U.Vector Double) deriving (Show)
