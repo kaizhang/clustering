@@ -20,7 +20,7 @@ type Size = Int
 
 data Dendrogram a = Leaf !a
                   | Branch !Size !Distance !(Dendrogram a) !(Dendrogram a)
-    deriving (Show)
+    deriving (Show, Read)
 
 instance Functor Dendrogram where
     fmap f (Leaf x) = Leaf $ f x

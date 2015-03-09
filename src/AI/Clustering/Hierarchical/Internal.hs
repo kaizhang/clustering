@@ -53,7 +53,7 @@ nearestNeighbor dist i preference = M.foldlWithKey' f (-1,1/0)
 {-# INLINE nearestNeighbor #-}
 
 -- | all update functions perform destructive updates, and hence should not be
--- called outside this module
+-- called by end users
 
 -- | single linkage update formula
 single :: DistUpdateFn
@@ -93,7 +93,7 @@ average lo hi nodeset (DistanceMat n dist) = DistanceMat n $ U.create $ do
     f2 = s2 / (s1+s2)
 {-# INLINE average #-}
 
--- | complete linkage update formula
+-- | weighted linkage update formula
 weighted :: DistUpdateFn
 weighted lo hi nodeset (DistanceMat n dist) = DistanceMat n $ U.create $ do
     v <- U.unsafeThaw dist
@@ -120,3 +120,9 @@ ward lo hi nodeset (DistanceMat n dist) = DistanceMat n $ U.create $ do
     s1 = fromIntegral . size . M.findWithDefault undefined lo $ nodeset
     s2 = fromIntegral . size . M.findWithDefault undefined hi $ nodeset
 {-# INLINE ward #-}
+
+{-
+-- O(n^2) time, O(n) space. Minimum spanning tree algorithm for single linkage
+mst :: [a] -> DistFn a -> Dendrogram a
+mst xs fn = undefined
+-}

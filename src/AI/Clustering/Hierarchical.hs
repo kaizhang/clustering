@@ -39,6 +39,7 @@ data Metric = Single    -- ^ Single linkage, $d(A,B) = min_{a \in A, b \in B} d(
             | Centroid  -- ^ Centroid linkage, not implemented
             | Median    -- ^ Median linkage, not implemented
 
+-- | perform hierarchical clustering
 hclust :: G.Vector v a => Metric -> v a -> DistFn a -> Dendrogram a
 hclust method xs f = label <$> nnChain dists fn
   where
