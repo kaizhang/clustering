@@ -3,17 +3,21 @@ module Test.Hierarchical
     ) where
 
 import Control.Monad
+import Data.Binary
+import Data.List.Split
 import qualified Data.Clustering.Hierarchical as C
 import qualified Data.Vector as V
 import System.Random.MWC
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 import AI.Clustering.Hierarchical
 
 tests :: TestTree
 tests = testGroup "Hierarchical:"
-    [ testCase "Single Linkage" testSingle
+    [ testProperty "read/write test" testSerialization
+    , testCase "Single Linkage" testSingle
     , testCase "Complete Linkage" testComplete
     , testCase "Average Linkage" testAverage
     , testCase "Weighted Linkage" testWeighted
@@ -62,3 +66,10 @@ testWeighted = do
     assertBool (unlines ["Expect: ", show true, "But see: ", show test]) $
         isEqual test true
 
+--testSerialization :: Property
+testSerialization :: [Double] -> Bool
+testSerialization xs
+    | length xs <= 2 = True
+    | otherwise = let xs' = V.fromList $ map V.fromList $ init $ chunksOf 2 xs
+                      dendro = fmap V.toList $ hclust Average xs' euclidean
+                  in dendro == (decode . encode) dendro

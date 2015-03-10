@@ -9,8 +9,11 @@ module AI.Clustering.Hierarchical.Types
     , idx
     ) where
 
+import Control.Monad (liftM, liftM4)
+import Data.Binary (Binary, put, get, getWord8)
 import Data.Bits (shiftR)
 import qualified Data.Vector.Unboxed as U
+import Data.Word (Word8)
 
 type Distance = Double
 type DistFn a = a -> a -> Distance
@@ -18,12 +21,28 @@ type Size = Int
 
 data Dendrogram a = Leaf !a
                   | Branch !Size !Distance !(Dendrogram a) !(Dendrogram a)
-    deriving (Show, Read)
+    deriving (Show, Eq)
+
+instance Binary a => Binary (Dendrogram a) where
+    put (Leaf a) = do put (0 :: Word8)
+                      put a
+    put (Branch s d l r) = do put (1 :: Word8)
+                              put s
+                              put d
+                              put l
+                              put r
+
+    get = do tag <- getWord8
+             case tag of
+                 0 -> liftM Leaf get
+                 1 -> liftM4 Branch get get get get
+                 _ -> error "fail to decode the dendrogram"
 
 instance Functor Dendrogram where
     fmap f (Leaf x) = Leaf $ f x
     fmap f (Branch n d l r) = Branch n d (fmap f l) $ fmap f r
 
+-- | O(1) Return the size of a dendrogram
 size :: Dendrogram a -> Int
 size (Leaf _) = 1
 size (Branch n _ _ _) = n

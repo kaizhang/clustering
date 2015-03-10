@@ -63,13 +63,13 @@ import AI.Clustering.Hierarchical.Internal
 import AI.Clustering.Hierarchical.Types
 
 -- | Different hierarchical clustering schemes.
-data Metric = Single    -- ^ O(N^2). Single linkage, $d(A,B) = min_{a \in A, b \in B} d(a,b)$.
-            | Complete  -- ^ O(N^2). Complete linkage, $d(A,B) = max_{a \in A, b \in B} d(a,b)$.
-            | Average   -- ^ O(N^2). Average linkage or UPGMA, $d(A,B) = \frac{\sum_{a \in A}\sum_{b \in B}d(a,b)}{|A||B|}$.
-            | Weighted  -- ^ O(N^2). Weighted linkage.
-            | Ward      -- ^ O(N^2). Ward's method.
-            | Centroid  -- ^ O(N^3). Centroid linkage, not implemented.
-            | Median    -- ^ O(N^3). Median linkage, not implemented.
+data Metric = Single    -- ^ O(n^2) Single linkage, $d(A,B) = min_{a \in A, b \in B} d(a,b)$.
+            | Complete  -- ^ O(n^2) Complete linkage, $d(A,B) = max_{a \in A, b \in B} d(a,b)$.
+            | Average   -- ^ O(n^2) Average linkage or UPGMA, $d(A,B) = \frac{\sum_{a \in A}\sum_{b \in B}d(a,b)}{|A||B|}$.
+            | Weighted  -- ^ O(n^2) Weighted linkage.
+            | Ward      -- ^ O(n^2) Ward's method.
+            | Centroid  -- ^ O(n^3) Centroid linkage, not implemented.
+            | Median    -- ^ O(n^3) Median linkage, not implemented.
 
 -- | Perform hierarchical clustering.
 hclust :: G.Vector v a => Metric -> v a -> DistFn a -> Dendrogram a

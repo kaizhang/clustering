@@ -1,3 +1,14 @@
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  $Header$
+-- Copyright   :  (c) 2015 Kai Zhang
+-- License     :  MIT
+-- Maintainer  :  kai@kzhang.org
+-- Stability   :  experimental
+-- Portability :  portable
+--
+-- Kmeans clustering
+--------------------------------------------------------------------------------
 {-# LANGUAGE FlexibleContexts  #-}
 
 module AI.Clustering.KMeans
