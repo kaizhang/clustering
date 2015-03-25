@@ -27,8 +27,12 @@ nnChain (DistanceMat n dist) fn = go (DistanceMat n $ U.force dist) initSet []
         | otherwise = go ds activeNodes $ c : chain
       where
         (c,d) = nearestNeighbor ds b a activeNodes
+
+        -- We always remove the node with smaller index. The other one will be
+        -- used to represent the merged result
         activeNodes' = M.insert hi (Branch (size1+size2) d c1 c2)
                      . M.delete lo $ activeNodes
+
         ds' = fn lo hi activeNodes ds
         c1 = M.findWithDefault undefined lo activeNodes
         c2 = M.findWithDefault undefined hi activeNodes
@@ -39,10 +43,16 @@ nnChain (DistanceMat n dist) fn = go (DistanceMat n $ U.force dist) initSet []
       where
         a = fst $ M.elemAt 0 activeNodes
         b = fst $ nearestNeighbor ds a (-1) activeNodes
+
     initSet = M.fromList . map (\i -> (i, Leaf i)) $ [0..n-1]
 {-# INLINE nnChain #-}
 
-nearestNeighbor :: DistanceMat -> Int -> Int -> M.Map Int (Dendrogram Int) -> (Int, Double)
+nearestNeighbor :: DistanceMat                  -- ^ distance matrix
+                -> Int                          -- ^ query
+                -> Int                          -- ^ this would be selected if
+                                                -- it achieves the minimal distance
+                -> M.Map Int (Dendrogram Int)
+                -> (Int, Double)
 nearestNeighbor dist i preference = M.foldlWithKey' f (-1,1/0)
   where
     f (x,d) j _ | i == j = (x,d)  -- skip
@@ -114,7 +124,7 @@ ward lo hi nodeset (DistanceMat n dist) = DistanceMat n $ U.create $ do
         d_lo_i <- UM.unsafeRead v $ idx n i lo
         d_hi_i <- UM.unsafeRead v $ idx n i hi
         UM.unsafeWrite v (idx n i hi) $
-            sqrt $ ((s1+s3)*d_lo_i + (s2+s3)*d_hi_i - s3*d_lo_hi) / (s1+s2+s3)
+            ((s1+s3)*d_lo_i + (s2+s3)*d_hi_i - s3*d_lo_hi) / (s1+s2+s3)
     return v
   where
     s1 = fromIntegral . size . M.findWithDefault undefined lo $ nodeset

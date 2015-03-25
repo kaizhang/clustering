@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                clustering
-version:             0.1.1
+version:             0.1.2
 synopsis:            High performance clustering algorithms
 description:
   Following clutering methods are included in this library:
