@@ -51,7 +51,7 @@ kmeans g method k mat = do
     initial <- case method of
         Forgy -> forgy g k mat
         _ -> undefined
-    return $ kmeansWith mat initial
+    return $ kmeansWith initial mat
 {-# INLINE kmeans #-}
 
 -- | Lloyd's algorithm, also known as K-means algorithm
