@@ -1,4 +1,16 @@
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  AI.Clustering.Hierarchical.Internal
+-- Copyright   :  (c) 2015 Kai Zhang
+-- License     :  MIT
+--
+-- Maintainer  :  kai@kzhang.org
+-- Stability   :  experimental
+-- Portability :  portable
+--
+--------------------------------------------------------------------------------
 module AI.Clustering.Hierarchical.Internal
+{-# WARNING "To be used by developer only" #-}
     ( nnChain
     , single
     , complete

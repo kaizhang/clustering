@@ -13,6 +13,7 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 import AI.Clustering.Hierarchical
+import Test.Utils
 
 tests :: TestTree
 tests = testGroup "Hierarchical:"
@@ -23,11 +24,6 @@ tests = testGroup "Hierarchical:"
     , testCase "Weighted Linkage" testWeighted
     ]
 
-randSample :: IO [V.Vector Double]
-randSample = do
-    g <- create
-    replicateM 500 $ uniformVector g 5
-
 isEqual :: Eq a => Dendrogram a -> C.Dendrogram a -> Bool
 isEqual (Leaf x) (C.Leaf x') = x == x'
 isEqual (Branch _ d x y) (C.Branch d' x' y') = abs (d - d') < 1e-8 &&
@@ -36,7 +32,7 @@ isEqual _ _ = False
 
 testSingle :: Assertion
 testSingle = do
-    xs <- randSample
+    xs <- randVectors 500 5
     let true = C.dendrogram C.SingleLinkage xs euclidean
         test = hclust Single (V.fromList xs) euclidean
     assertBool (unlines ["Expect: ", show true, "But see: ", show test]) $
@@ -44,7 +40,7 @@ testSingle = do
 
 testComplete :: Assertion
 testComplete = do
-    xs <- randSample
+    xs <- randVectors 500 5
     let true = C.dendrogram C.CompleteLinkage xs euclidean
         test = hclust Complete (V.fromList xs) euclidean
     assertBool (unlines ["Expect: ", show true, "But see: ", show test]) $
@@ -52,7 +48,7 @@ testComplete = do
 
 testAverage :: Assertion
 testAverage = do
-    xs <- randSample
+    xs <- randVectors 500 5
     let true = C.dendrogram C.UPGMA xs euclidean
         test = hclust Average (V.fromList xs) euclidean
     assertBool (unlines ["Expect: ", show true, "But see: ", show test]) $
@@ -60,7 +56,7 @@ testAverage = do
 
 testWeighted :: Assertion
 testWeighted = do
-    xs <- randSample
+    xs <- randVectors 500 5
     let true = C.dendrogram C.FakeAverageLinkage xs euclidean
         test = hclust Weighted (V.fromList xs) euclidean
     assertBool (unlines ["Expect: ", show true, "But see: ", show test]) $

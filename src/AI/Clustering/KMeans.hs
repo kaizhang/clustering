@@ -17,7 +17,9 @@ module AI.Clustering.KMeans
     -- * Initialization methods
     , Initialization(..)
 
+    -- * Useful functions
     , decode
+    , withinSS
     ) where
 
 import Control.Monad (forM_)
@@ -29,28 +31,23 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import Data.List (minimumBy, nub)
-import System.Random.MWC (uniformR, Gen)
+import Data.List (minimumBy, foldl')
+import System.Random.MWC (Gen)
 
--- | Results from running kmeans
-data KMeans = KMeans
-    { _clusters :: U.Vector Int     -- ^ A vector of integers (0 ~ k-1)
-                                    -- indicating the cluster to which each
-                                    -- point is allocated.
-    , _centers :: MU.Matrix Double  -- ^ A matrix of cluster centres.
-    } deriving (Show)
+import AI.Clustering.KMeans.Types (KMeans(..), Initialization(..))
+import AI.Clustering.KMeans.Internal (sumSquares, forgy, kmeansPP)
 
 -- | Lloyd's algorithm, also known as K-means algorithm
 kmeans :: PrimMonad m
        => Gen (PrimState m)
        -> Initialization
-       -> Int                           -- ^ number of clusters
-       -> MU.Matrix Double             -- ^ each row represents a point
+       -> Int                   -- ^ number of clusters
+       -> MU.Matrix Double      -- ^ data stores in rows
        -> m KMeans
 kmeans g method k mat = do
     initial <- case method of
         Forgy -> forgy g k mat
-        _ -> undefined
+        KMeansPP -> kmeansPP g k mat
     return $ kmeansWith initial mat
 {-# INLINE kmeans #-}
 
@@ -71,7 +68,7 @@ kmeansWith initial mat | d /= MU.cols initial || k > n = error "check input"
     -- Assignment step
     assign means = U.generate n $ \i ->
         let x = MU.takeRow mat i
-        in fst $ minimumBy (comparing snd) $ zip [0..k-1] $ map (dist x) $ MU.toRows means
+        in fst $ minimumBy (comparing snd) $ zip [0..k-1] $ map (sumSquares x) $ MU.toRows means
 
     -- Update step
     update membership = MM.create $ do
@@ -89,47 +86,10 @@ kmeansWith initial mat | d /= MU.cols initial || k > n = error "check input"
                 MM.unsafeRead m (i,j) >>= MM.unsafeWrite m (i,j) . (/fromIntegral c)
         return m
 
-    dist xs = U.sum . U.zipWith (\x y -> (x - y)**2) xs
-
     n = MU.rows mat
     k = MU.rows initial
     d = MU.cols mat
 {-# INLINE kmeansWith #-}
-
--- | Different initialization methods
-data Initialization = Forgy    -- ^ The Forgy method randomly chooses k unique
-                               -- observations from the data set and uses these
-                               -- as the initial means
-                    | KMeansPP -- ^ K-means++ algorithm, not implemented.
-
-forgy :: PrimMonad m
-      => Gen (PrimState m)
-      -> Int                 -- number of clusters
-      -> MU.Matrix Double    -- data
-      -> m (MU.Matrix Double)
-forgy g k mat | k > n = error "k is larger than sample size"
-              | otherwise = iter
-  where
-    iter = do
-        vec <- sample g k . U.enumFromN 0 $ n
-        let xs = map (MU.takeRow mat) . U.toList $ vec
-        if length (nub xs) == length xs
-           then return . MU.fromRows $ xs
-           else iter
-    n = MU.rows mat
-{-# INLINE forgy #-}
-
--- random select k samples from a population
-sample :: PrimMonad m => Gen (PrimState m) -> Int -> U.Vector Int -> m (U.Vector Int)
-sample g k xs = do
-    v <- U.thaw xs
-    forM_ [0..k-1] $ \i -> do
-        j <- uniformR (i, lst) g
-        UM.unsafeSwap v i j
-    U.unsafeFreeze . UM.take k $ v
-  where
-    lst = U.length xs - 1
-{-# INLINE sample #-}
 
 -- | Assign data to clusters based on KMeans result
 decode :: KMeans -> [a] -> [[a]]
@@ -143,4 +103,8 @@ decode result xs = V.toList $ V.create $ do
     n = U.maximum membership + 1
 
 -- | Compute within-cluster sum of squares
---withinSS :: Matrix
+withinSS :: KMeans -> MU.Matrix Double -> [Double]
+withinSS result mat = zipWith f (decode result [0 .. MU.rows mat-1]) .
+                          MU.toRows . _centers $ result
+  where
+    f c center = foldl' (+) 0 $ map (sumSquares center . MU.takeRow mat) c
