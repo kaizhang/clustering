@@ -8,7 +8,10 @@ import AI.Clustering.Hierarchical
 import AI.Clustering.Hierarchical.Types ((!))
 
 import Bench.Hierarchical (benchHierarchical)
+import Bench.KMeans (benchKMeans)
 
 main :: IO ()
 main = defaultMain
-    [ benchHierarchical ]
+    [ -- benchHierarchical
+      benchKMeans
+    ]

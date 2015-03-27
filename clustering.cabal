@@ -73,6 +73,7 @@ benchmark bench
   main-is: bench.hs
   other-modules:
     Bench.Hierarchical
+    Bench.KMeans
     Bench.Utils
 
   default-language:    Haskell2010
@@ -83,6 +84,7 @@ benchmark bench
     , vector
     , clustering
     , hierarchical-clustering
+    , matrices
 
 source-repository  head
   type: git
