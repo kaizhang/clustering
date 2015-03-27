@@ -20,6 +20,9 @@ module AI.Clustering.KMeans
     -- * Useful functions
     , decode
     , withinSS
+
+    -- * References
+    -- $references
     ) where
 
 import Control.Monad (forM_)
@@ -108,3 +111,11 @@ withinSS result mat = zipWith f (decode result [0 .. MU.rows mat-1]) .
                           MU.toRows . _centers $ result
   where
     f c center = foldl' (+) 0 $ map (sumSquares center . MU.takeRow mat) c
+
+
+-- $references
+--
+-- Arthur, D. and Vassilvitskii, S. (2007). k-means++: the advantages of careful 
+-- seeding. Proceedings of the eighteenth annual ACM-SIAM symposium on Discrete 
+-- algorithms. Society for Industrial and Applied Mathematics Philadelphia, PA, 
+-- USA. pp. 1027–1035.
