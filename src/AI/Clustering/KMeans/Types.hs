@@ -29,5 +29,5 @@ data KMeans = KMeans
 -- | Different initialization methods
 data Initialization = Forgy    -- ^ The Forgy method randomly chooses k unique
                                -- observations from the data set and uses these
-                               -- as the initial means
-                    | KMeansPP -- ^ K-means++ algorithm, not implemented.
+                               -- as the initial means.
+                    | KMeansPP -- ^ K-means++ algorithm.

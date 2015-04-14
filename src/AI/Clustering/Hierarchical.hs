@@ -47,7 +47,10 @@ module AI.Clustering.Hierarchical
     , flatten
     , drawDendrogram
     , computeDists
+
+    -- * Distance functions
     , euclidean
+    , hamming
 
     -- * References
     -- $references
@@ -116,10 +119,15 @@ computeDists f vec = DistanceMat n . U.fromList . flip concatMap [0..n-1] $ \i -
     n = G.length vec
 {-# INLINE computeDists #-}
 
--- | compute euclidean distance between two points
+-- | Compute euclidean distance between two points.
 euclidean :: G.Vector v Double => DistFn (v Double)
 euclidean xs ys = sqrt $ G.sum $ G.zipWith (\x y -> (x-y)**2) xs ys
 {-# INLINE euclidean #-}
+
+-- | Hamming distance.
+hamming :: (G.Vector v a, G.Vector v Bool, Eq a) => DistFn (v a)
+hamming xs = fromIntegral . G.length . G.filter id . G.zipWith (/=) xs
+{-# INLINE hamming #-}
 
 -- $references
 --
