@@ -22,48 +22,51 @@ import Control.Monad (forM_)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import Data.List (nub)
 import qualified Data.Matrix.Unboxed as MU
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 import System.Random.MWC (uniformR, Gen)
 
-forgy :: PrimMonad m
+forgy :: (PrimMonad m, G.Vector v a)
       => Gen (PrimState m)
       -> Int                 -- number of clusters
-      -> MU.Matrix Double    -- data
+      -> v a                 -- data
+      -> (a -> U.Vector Double)
       -> m (MU.Matrix Double)
-forgy g k mat | k > n = error "k is larger than sample size"
-              | otherwise = iter
+forgy g k dat fn | k > n = error "k is larger than sample size"
+                 | otherwise = iter
   where
     iter = do
         vec <- randN g k . U.enumFromN 0 $ n
-        let xs = map (MU.takeRow mat) . U.toList $ vec
+        let xs = map (\i -> fn $ dat `G.unsafeIndex` i) . U.toList $ vec
         if length (nub xs) == length xs
            then return . MU.fromRows $ xs
            else iter
-    n = MU.rows mat
+    n = G.length dat
 {-# INLINE forgy #-}
 
-kmeansPP :: PrimMonad m
+kmeansPP :: (PrimMonad m, G.Vector v a)
          => Gen (PrimState m)
          -> Int
-         -> MU.Matrix Double
+         -> v a
+         -> (a -> U.Vector Double)
          -> m (MU.Matrix Double)
-kmeansPP g k mat
+kmeansPP g k dat fn
     | k > n = error "k is larger than sample size"
     | otherwise = do
         c1 <- uniformR (0,n-1) g
         loop [c1] 1
   where
     loop centers !k'
-        | k' == k = return $ MU.fromRows $ map (mat `MU.takeRow`) centers
+        | k' == k = return $ MU.fromRows $ map (\i -> fn $ dat `G.unsafeIndex` i) centers
         | otherwise = do
             c' <- chooseWithProb g $ U.map (shortestDist centers) rowIndices
             loop (c':centers) (k'+1)
 
-    n = MU.rows mat
+    n = G.length dat
     rowIndices = U.enumFromN 0 n
     shortestDist centers x = minimum $ map (\i ->
-        sumSquares (mat `MU.takeRow` x) (mat `MU.takeRow` i)) centers
+        sumSquares (fn $ dat `G.unsafeIndex` x) (fn $ dat `G.unsafeIndex` i)) centers
 {-# INLINE kmeansPP #-}
 
 chooseWithProb :: PrimMonad m

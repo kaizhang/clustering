@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  AI.Clustering.KMeans
@@ -12,6 +13,7 @@
 module AI.Clustering.KMeans
     ( KMeans(..)
     , kmeans
+    , kmeansBy
     , kmeansWith
 
     -- * Initialization methods
@@ -28,9 +30,11 @@ module AI.Clustering.KMeans
 import Control.Monad (forM_)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import qualified Data.Matrix.Unboxed as MU
+import qualified Data.Matrix.Generic as MG
 import qualified Data.Matrix.Unboxed.Mutable as MM
 import Data.Ord (comparing)
 import qualified Data.Vector as V
+import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
@@ -40,26 +44,40 @@ import System.Random.MWC (Gen)
 import AI.Clustering.KMeans.Types (KMeans(..), Initialization(..))
 import AI.Clustering.KMeans.Internal (sumSquares, forgy, kmeansPP)
 
--- | Lloyd's algorithm, also known as K-means algorithm
-kmeans :: PrimMonad m
+kmeans :: (PrimMonad m, MG.Matrix mat U.Vector Double)
        => Gen (PrimState m)
        -> Initialization
-       -> Int                   -- ^ number of clusters
-       -> MU.Matrix Double      -- ^ data stores in rows
+       -> Int
+       -> mat U.Vector Double
        -> m KMeans
-kmeans g method k mat = do
-    initial <- case method of
-        Forgy -> forgy g k mat
-        KMeansPP -> kmeansPP g k mat
-    return $ kmeansWith initial mat
+kmeans g method k mat = kmeansBy g method k dat (MG.takeRow mat)
+  where
+    dat = U.enumFromN 0 $ MG.rows mat
 {-# INLINE kmeans #-}
 
 -- | Lloyd's algorithm, also known as K-means algorithm
-kmeansWith :: MU.Matrix Double   -- ^ initial set of k centroids
-           -> MU.Matrix Double   -- ^ each row represents a point
+kmeansBy :: (PrimMonad m, G.Vector v a)
+         => Gen (PrimState m)
+         -> Initialization
+         -> Int                   -- ^ number of clusters
+         -> v a                   -- ^ data stores in rows
+         -> (a -> U.Vector Double)
+         -> m KMeans
+kmeansBy g method k dat fn = do
+    initial <- case method of
+        Forgy -> forgy g k dat fn
+        KMeansPP -> kmeansPP g k dat fn
+    return $ kmeansWith initial dat fn
+{-# INLINE kmeansBy #-}
+
+-- | Lloyd's algorithm, also known as K-means algorithm
+kmeansWith :: G.Vector v a
+           => MU.Matrix Double   -- ^ initial set of k centroids
+           -> v a                -- ^ each row represents a point
+           -> (a -> U.Vector Double)
            -> KMeans
-kmeansWith initial mat | d /= MU.cols initial || k > n = error "check input"
-                       | otherwise = KMeans member centers
+kmeansWith initial dat fn | d /= MU.cols initial || k > n = error "check input"
+                          | otherwise = KMeans member centers
   where
     (member, centers) = loop initial U.empty
     loop means membership
@@ -70,18 +88,20 @@ kmeansWith initial mat | d /= MU.cols initial || k > n = error "check input"
 
     -- Assignment step
     assign means = U.generate n $ \i ->
-        let x = MU.takeRow mat i
+        let x = fn $ G.unsafeIndex dat i
         in fst $ minimumBy (comparing snd) $ zip [0..k-1] $ map (sumSquares x) $ MU.toRows means
 
     -- Update step
-    update membership = MM.create $ do
+    update membership = MU.create $ do
         m <- MM.replicate (k,d) 0.0
         count <- UM.replicate k (0 :: Int)
         forM_ [0..n-1] $ \i -> do
             let x = membership U.! i
             UM.unsafeRead count x >>= UM.unsafeWrite count x . (+1)
+
+            let vec = fn $ dat G.! i
             forM_ [0..d-1] $ \j ->
-                MM.unsafeRead m (x,j) >>= MM.unsafeWrite m (x,j) . (+ mat MU.! (i,j))
+                MM.unsafeRead m (x,j) >>= MM.unsafeWrite m (x,j) . (+ (vec U.! j))
         -- normalize
         forM_ [0..k-1] $ \i -> do
             c <- UM.unsafeRead count i
@@ -89,9 +109,9 @@ kmeansWith initial mat | d /= MU.cols initial || k > n = error "check input"
                 MM.unsafeRead m (i,j) >>= MM.unsafeWrite m (i,j) . (/fromIntegral c)
         return m
 
-    n = MU.rows mat
+    n = G.length dat
     k = MU.rows initial
-    d = MU.cols mat
+    d = MU.cols initial
 {-# INLINE kmeansWith #-}
 
 -- | Assign data to clusters based on KMeans result
