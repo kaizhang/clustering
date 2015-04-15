@@ -17,7 +17,7 @@ module AI.Clustering.KMeans
     , kmeansWith
 
     -- * Initialization methods
-    , Initialization(..)
+    , Method(..)
 
     -- * Useful functions
     , decode
@@ -41,12 +41,13 @@ import qualified Data.Vector.Unboxed.Mutable as UM
 import Data.List (minimumBy, foldl')
 import System.Random.MWC (Gen)
 
-import AI.Clustering.KMeans.Types (KMeans(..), Initialization(..))
+import AI.Clustering.KMeans.Types (KMeans(..), Method(..))
 import AI.Clustering.KMeans.Internal (sumSquares, forgy, kmeansPP)
 
+-- | Perform K-means clustering
 kmeans :: (PrimMonad m, MG.Matrix mat U.Vector Double)
        => Gen (PrimState m)
-       -> Initialization
+       -> Method
        -> Int
        -> mat U.Vector Double
        -> m KMeans
@@ -55,10 +56,10 @@ kmeans g method k mat = kmeansBy g method k dat (MG.takeRow mat)
     dat = U.enumFromN 0 $ MG.rows mat
 {-# INLINE kmeans #-}
 
--- | Lloyd's algorithm, also known as K-means algorithm
+-- | K-means algorithm
 kmeansBy :: (PrimMonad m, G.Vector v a)
          => Gen (PrimState m)
-         -> Initialization
+         -> Method
          -> Int                   -- ^ number of clusters
          -> v a                   -- ^ data stores in rows
          -> (a -> U.Vector Double)
@@ -70,7 +71,7 @@ kmeansBy g method k dat fn = do
     return $ kmeansWith initial dat fn
 {-# INLINE kmeansBy #-}
 
--- | Lloyd's algorithm, also known as K-means algorithm
+-- | K-means algorithm
 kmeansWith :: G.Vector v a
            => MU.Matrix Double   -- ^ initial set of k centroids
            -> v a                -- ^ each row represents a point

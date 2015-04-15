@@ -1,13 +1,14 @@
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE DataKinds #-}
 module Test.KMeans
     ( tests
     ) where
 
 import Control.Monad
 import qualified Data.Matrix.Unboxed as MU
-import qualified Data.Vector as V
-import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed as V
 import Data.List
-import qualified Math.KMeans as K
+import RlangQQ
 import System.Random.MWC
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -23,19 +24,34 @@ tests = testGroup "KMeans:"
     [ testCase "KMeans" testKMeans
     ]
 
+rKmeans :: Int -> [Double] -> [Double] -> IO [Int]
+rKmeans n dat center = do
+    o <- [r| x <- matrix(hs_dat, ncol=hs_n,byrow=T);
+             y <- matrix(hs_center, ncol=hs_n,byrow=T);
+             hs_result <- kmeans(x,y,iter.max=1000000,algorithm="Lloyd")$cluster;
+         |]
+    let x = Label :: Label "result"
+    return $ o .!. x
+
 testKMeans :: Assertion
 testKMeans = do
+    let n = 2000
+        d = 15
+        k = 10
     g <- createSystemRandom
-    xs <- randVectors 10 3
+    xs <- randVectors n d
 
-    let dat = MU.fromRows xs
-    centers <- kmeansPP g 3 dat
-    let test = sort $ map sort $ decode (kmeansWith centers dat) xs
-    true <- K.kmeansWith (\_ _ -> return $ V.fromList $ map (K.Cluster . return) $ MU.toRows centers) id K.euclidSq 3 xs
-    let true' = sort $ map sort $ map K.elements $ V.toList true
+    let mat = MU.fromRows xs :: MU.Matrix Double
+        dat = V.enumFromN 0 $ MU.rows mat
+        fn = MU.takeRow mat
 
-    print $ length true'
-    print $ length test
+    centers <- kmeansPP g k dat fn
 
-    assertBool ("Expect: " ++ show true' ++ "\nBut saw: " ++ show test) $
-        test == true'
+    r <- rKmeans d (MU.toList mat) (MU.toList centers)
+    let test = sort $ map sort $ decode result xs
+        result = kmeansWith centers dat fn
+        true = sort $ map sort $ decode result{_clusters=V.fromList $ map (subtract 1) r} xs
+        show' xs = unlines $ map (show . map (unwords . map show . V.toList)) xs
+
+    assertBool ("Expect: " ++ show' true ++ "\nBut saw: " ++ show' test) $
+        test == true

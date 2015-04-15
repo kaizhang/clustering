@@ -12,7 +12,7 @@
 --------------------------------------------------------------------------------
 module AI.Clustering.KMeans.Types
     ( KMeans(..)
-    , Initialization(..)
+    , Method(..)
     ) where
 
 import qualified Data.Matrix.Unboxed as MU
@@ -27,7 +27,7 @@ data KMeans = KMeans
     } deriving (Show)
 
 -- | Different initialization methods
-data Initialization = Forgy    -- ^ The Forgy method randomly chooses k unique
-                               -- observations from the data set and uses these
-                               -- as the initial means.
-                    | KMeansPP -- ^ K-means++ algorithm.
+data Method = Forgy    -- ^ The Forgy method randomly chooses k unique
+                       -- observations from the data set and uses these
+                       -- as the initial means.
+            | KMeansPP -- ^ K-means++ algorithm.
