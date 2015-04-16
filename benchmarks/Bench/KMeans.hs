@@ -15,7 +15,7 @@ gen :: GenIO
 gen = unsafePerformIO createSystemRandom
 
 dat :: MU.Matrix Double
-dat = unsafePerformIO $ fmap MU.fromRows $ randVectors 10000 10
+dat = unsafePerformIO $ fmap MU.fromRows $ randVectors 1000 10
 
 benchKMeans :: Benchmark
 benchKMeans = bgroup "KMeans clustering"
@@ -27,5 +27,5 @@ benchKMeans = bgroup "KMeans clustering"
         ]
     ]
 
-kmeans' :: GenIO -> Initialization -> Int -> MU.Matrix Double -> IO (U.Vector Int)
+kmeans' :: GenIO -> Method -> Int -> MU.Matrix Double -> IO (U.Vector Int)
 kmeans' g method k = fmap _clusters . kmeans g method k

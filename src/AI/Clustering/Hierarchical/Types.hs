@@ -7,12 +7,16 @@ module AI.Clustering.Hierarchical.Types
     , DistanceMat(..)
     , (!)
     , idx
+    , computeDists
+    , computeDists'
     ) where
 
 import Control.Monad (liftM, liftM4)
+import Control.Parallel.Strategies (rdeepseq, parMap)
 import Data.Binary (Binary, put, get, getWord8)
 import Data.Bits (shiftR)
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Generic as G
 import Data.Word (Word8)
 
 type Distance = Double
@@ -59,3 +63,19 @@ idx :: Int -> Int -> Int -> Int
 idx n i j | i <= j = (i * (2 * n - i - 3)) `shiftR` 1 + j - 1
           | otherwise = (j * (2 * n - j - 3)) `shiftR` 1 + i - 1
 {-# INLINE idx #-}
+
+-- | compute distance matrix
+computeDists :: G.Vector v a => DistFn a -> v a -> DistanceMat
+computeDists f vec = DistanceMat n . U.fromList . flip concatMap [0..n-1] $ \i ->
+    flip map [i+1..n-1] $ \j -> f (vec `G.unsafeIndex` i) (vec `G.unsafeIndex` j)
+  where
+    n = G.length vec
+{-# INLINE computeDists #-}
+
+-- | compute distance matrix in parallel
+computeDists' :: G.Vector v a => DistFn a -> v a -> DistanceMat
+computeDists' f vec = DistanceMat n . U.fromList . concat . flip (parMap rdeepseq) [0..n-1] $ \i ->
+    flip map [i+1..n-1] $ \j -> f (vec `G.unsafeIndex` i) (vec `G.unsafeIndex` j)
+  where
+    n = G.length vec
+{-# INLINE computeDists' #-}

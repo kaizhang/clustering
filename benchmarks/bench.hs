@@ -12,6 +12,6 @@ import Bench.KMeans (benchKMeans)
 
 main :: IO ()
 main = defaultMain
-    [ -- benchHierarchical
-      benchKMeans
+    [ benchHierarchical
+    , benchKMeans
     ]

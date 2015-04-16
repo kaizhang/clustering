@@ -46,7 +46,6 @@ module AI.Clustering.Hierarchical
     , cutAt
     , flatten
     , drawDendrogram
-    , computeDists
 
     -- * Distance functions
     , euclidean
@@ -59,7 +58,6 @@ module AI.Clustering.Hierarchical
 
 import Control.Applicative ((<$>))
 import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
 import Text.Printf (printf)
 
 import AI.Clustering.Hierarchical.Internal
@@ -78,7 +76,7 @@ data Linkage = Single    -- ^ O(n^2) Single linkage, $d(A,B) = min_{a \in A, b \
 hclust :: G.Vector v a => Linkage -> v a -> DistFn a -> Dendrogram a
 hclust method xs f = label <$> nnChain dists fn
   where
-    dists = computeDists f xs
+    dists = computeDists' f xs
     label i = xs G.! i
     fn = case method of
         Single -> single
@@ -111,13 +109,6 @@ drawDendrogram = unlines . draw
       : shift "+- " "|  " (draw l) ++ shift "`- " "   " (draw r)
     draw (Leaf x) = [x,""]
     shift first other = zipWith (++) (first : repeat other)
-
-computeDists :: G.Vector v a => DistFn a -> v a -> DistanceMat
-computeDists f vec = DistanceMat n . U.fromList . flip concatMap [0..n-1] $ \i ->
-    flip map [i+1..n-1] $ \j -> f (vec `G.unsafeIndex` i) (vec `G.unsafeIndex` j)
-  where
-    n = G.length vec
-{-# INLINE computeDists #-}
 
 -- | Compute euclidean distance between two points.
 euclidean :: G.Vector v Double => DistFn (v Double)
