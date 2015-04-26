@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE FlexibleContexts #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  AI.Clustering.KMeans.Internal
