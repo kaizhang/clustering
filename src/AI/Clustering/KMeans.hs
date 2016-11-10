@@ -33,7 +33,7 @@ import AI.Clustering.KMeans.Internal (sumSquares, forgy, kmeansPP)
 
 -- | Perform K-means clustering
 kmeans :: Int                -- ^ The number of clusters
-       -> MU.Matrix Double   -- ^ Input data stored in rows of a matrix
+       -> MU.Matrix Double   -- ^ Input data stored as rows in a matrix
        -> KMeansOpts
        -> KMeans (U.Vector Double)
 kmeans k mat opts = KMeans member cs grps
@@ -80,7 +80,7 @@ kmeans' :: G.Vector v a
         -> (a -> U.Vector Double)   -- ^ Feature extraction function
         -> (U.Vector Int, MU.Matrix Double)
 kmeans' initial dat fn
-    | U.length (fn $ U.head dat) /= d = error "Dimension mismatched."
+    | U.length (fn $ G.head dat) /= d = error "Dimension mismatched."
     | otherwise = (member, centers)
   where
     (member, centers) = loop initial U.empty
@@ -129,7 +129,7 @@ decode member xs = V.toList $ V.create $ do
 {-# INLINE decode #-}
 
 {-
--- | Compute within-cluster sum of squares
+-- Compute within-cluster sum of squares
 withinSS :: KMeans -> MU.Matrix Double -> [Double]
 withinSS result mat = zipWith f (decode result [0 .. MU.rows mat-1]) .
                           MU.toRows . _centers $ result
