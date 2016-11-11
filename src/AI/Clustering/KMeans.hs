@@ -2,7 +2,7 @@
 
 module AI.Clustering.KMeans
     ( KMeans(..)
-    , KMeansOpts
+    , KMeansOpts(..)
     , defaultKMeansOpts
     , kmeans
     , kmeansBy

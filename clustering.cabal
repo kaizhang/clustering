@@ -1,5 +1,5 @@
 name:                clustering
-version:             0.3.0
+version:             0.3.1
 synopsis:            High performance clustering algorithms
 description:
   Following clutering methods are included in this library:
