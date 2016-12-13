@@ -36,8 +36,11 @@ kmeans :: Int                -- ^ The number of clusters
        -> MU.Matrix Double   -- ^ Input data stored as rows in a matrix
        -> KMeansOpts
        -> KMeans (U.Vector Double)
-kmeans k mat opts = KMeans member cs grps
+kmeans k mat opts
+    | containNaN = error "Input data contains NaN."
+    | otherwise = KMeans member cs grps
   where
+    containNaN =  U.any isNaN $ MU.flatten mat
     (member, cs) = kmeans' initial dat fn
     grps = if kmeansClusters opts
         then Just $ decode member $ MU.toRows mat
@@ -59,8 +62,11 @@ kmeansBy :: G.Vector v a
          -> (a -> U.Vector Double)
          -> KMeansOpts
          -> KMeans a
-kmeansBy k dat fn opts = KMeans member cs grps
+kmeansBy k dat fn opts
+    | containNaN = error "Input data contains NaN."
+    | otherwise = KMeans member cs grps
   where
+    containNaN = G.foldl (\acc x -> acc || U.any isNaN (fn x)) False dat
     (member, cs) = kmeans' initial dat fn
     grps = if kmeansClusters opts
         then Just $ decode member $ G.toList dat
