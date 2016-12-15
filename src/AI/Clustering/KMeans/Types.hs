@@ -25,13 +25,22 @@ data KMeansOpts = KMeansOpts
     { kmeansMethod :: Method
     , kmeansSeed :: (U.Vector Word32)   -- ^ Seed for random number generation
     , kmeansClusters :: Bool   -- ^ Wether to return clusters, may use a lot memory
+    , kmeansMaxIter :: Int     -- ^ Maximum iteration
     }
 
+-- | Default options.
+-- > defaultKMeansOpts = KMeansOpts
+-- >     { kmeansMethod = KMeansPP
+-- >     , kmeansSeed = U.fromList [1,2,3,4,5,6,7]
+-- >     , kmeansClusters = True
+-- >     , kmeansMaxIter = 10
+-- >     }
 defaultKMeansOpts :: KMeansOpts
 defaultKMeansOpts = KMeansOpts
     { kmeansMethod = KMeansPP
     , kmeansSeed = U.fromList [1,2,3,4,5,6,7]
     , kmeansClusters = True
+    , kmeansMaxIter = 10
     }
 
 -- | Results from running kmeans

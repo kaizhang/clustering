@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE BangPatterns #-}
 
 module AI.Clustering.KMeans
     ( KMeans(..)
@@ -41,7 +42,7 @@ kmeans k mat opts
     | otherwise = KMeans member cs grps
   where
     containNaN =  U.any isNaN $ MU.flatten mat
-    (member, cs) = kmeans' initial dat fn
+    (member, cs) = kmeans' initial (kmeansMaxIter opts) dat fn
     grps = if kmeansClusters opts
         then Just $ decode member $ MU.toRows mat
         else Nothing
@@ -67,7 +68,7 @@ kmeansBy k dat fn opts
     | otherwise = KMeans member cs grps
   where
     containNaN = G.foldl (\acc x -> acc || U.any isNaN (fn x)) False dat
-    (member, cs) = kmeans' initial dat fn
+    (member, cs) = kmeans' initial (kmeansMaxIter opts) dat fn
     grps = if kmeansClusters opts
         then Just $ decode member $ G.toList dat
         else Nothing
@@ -82,24 +83,27 @@ kmeansBy k dat fn opts
 -- | K-means algorithm
 kmeans' :: G.Vector v a
         => MU.Matrix Double         -- ^ Initial set of k centroids
+        -> Int                      -- ^ Max inter
         -> v a                      -- ^ Input data
         -> (a -> U.Vector Double)   -- ^ Feature extraction function
         -> (U.Vector Int, MU.Matrix Double)
-kmeans' initial dat fn
+kmeans' initial maxiter dat fn
     | U.length (fn $ G.head dat) /= d = error "Dimension mismatched."
     | otherwise = (member, centers)
   where
-    (member, centers) = loop initial U.empty
-    loop means membership
-        | membership' == membership = (membership, means)
-        | otherwise = loop (update membership') membership'
+    (member, centers) = loop 0 initial U.empty
+    loop !iter means membership
+        | iter >= maxiter || membership' == membership = (membership, means)
+        | otherwise = loop (iter+1) (update membership') membership'
       where
         membership' = assign means
 
     -- Assignment step
     assign means = U.generate n $ \i ->
         let x = fn $ G.unsafeIndex dat i
-        in fst $ minimumBy (comparing snd) $ zip [0..k-1] $ map (sumSquares x) $ MU.toRows means
+            f (!min', !j') j = let d = sumSquares x $ means `MU.takeRow` j
+                               in if d < min' then (d, j) else (min', j')
+        in snd $ foldl' f (1/0, -1) [0..k-1]
 
     -- Update step
     update membership = MU.create $ do
