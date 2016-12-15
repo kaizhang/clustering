@@ -59,7 +59,7 @@ kmeansPP g k dat fn
 {-# INLINE kmeansPP #-}
 
 sumSquares :: U.Vector Double -> U.Vector Double -> Double
-sumSquares xs = U.sum . U.zipWith (\x y -> (x - y)**2) xs
+sumSquares xs = U.sum . U.zipWith (\x y -> (x - y) * (x - y)) xs
 {-# INLINE sumSquares #-}
 
 -- | Generate N non-duplicated uniformly distributed random variables in a given range.

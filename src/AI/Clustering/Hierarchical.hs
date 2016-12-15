@@ -86,6 +86,16 @@ hclust method xs f = label <$> nnChain dists fn
         Ward -> ward
         _ -> error "Not implemented"
 
+-- | Normalize the tree heights so that the highest is 1.
+normalize :: Dendrogram a -> Dendrogram a
+normalize dendro = go dendro
+  where
+    go (Branch n d l r) = Branch n (d / maxHeight) (go l) (go r)
+    go (Leaf x) = Leaf x
+    maxHeight = case dendro of
+        Branch _ x _ _ -> x
+        Leaf _ -> 0
+
 -- | Cut a dendrogram at given height.
 cutAt :: Dendrogram a -> Distance -> [Dendrogram a]
 cutAt dendro th = go [] dendro

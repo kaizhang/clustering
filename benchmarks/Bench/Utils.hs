@@ -10,5 +10,5 @@ randVectors :: Int  -- ^ number of samples
             -> Int  -- ^ vector length
             -> IO [U.Vector Double]
 randVectors n k = do
-    g <- createSystemRandom
+    g <- create
     replicateM n $ uniformVector g k
