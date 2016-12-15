@@ -18,6 +18,7 @@ module AI.Clustering.KMeans
 import Control.Monad (forM_)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import qualified Data.Matrix.Unboxed as MU
+import Data.Matrix.Generic (unsafeTakeRow)
 import qualified Data.Matrix.Unboxed.Mutable as MM
 import Data.Ord (comparing)
 import qualified Data.Vector as V
@@ -47,7 +48,7 @@ kmeans k mat opts
         then Just $ decode member $ MU.toRows mat
         else Nothing
     dat = U.enumFromN 0 $ MU.rows mat
-    fn = MU.takeRow mat
+    fn = unsafeTakeRow mat
     initial = runST $ do
         gen <- initialize $ kmeansSeed opts
         case kmeansMethod opts of
@@ -101,7 +102,7 @@ kmeans' initial maxiter dat fn
     -- Assignment step
     assign means = U.generate n $ \i ->
         let x = fn $ G.unsafeIndex dat i
-            f (!min', !j') j = let d = sumSquares x $ means `MU.takeRow` j
+            f (!min', !j') j = let d = sumSquares x $ means `unsafeTakeRow` j
                                in if d < min' then (d, j) else (min', j')
         in snd $ foldl' f (1/0, -1) [0..k-1]
 
@@ -110,12 +111,12 @@ kmeans' initial maxiter dat fn
         m <- MM.replicate (k,d) 0.0
         count <- UM.replicate k (0 :: Int)
         forM_ [0..n-1] $ \i -> do
-            let x = membership U.! i
-            UM.unsafeRead count x >>= UM.unsafeWrite count x . (+1)
-
-            let vec = fn $ dat G.! i
+            let x = membership `U.unsafeIndex` i
+                vec = fn $ dat `G.unsafeIndex` i
+            UM.unsafeModify count (+1) x
             forM_ [0..d-1] $ \j ->
-                MM.unsafeRead m (x,j) >>= MM.unsafeWrite m (x,j) . (+ (vec U.! j))
+                MM.unsafeRead m (x,j) >>=
+                    MM.unsafeWrite m (x,j) . (+ (vec `U.unsafeIndex` j))
         -- normalize
         forM_ [0..k-1] $ \i -> do
             c <- UM.unsafeRead count i
