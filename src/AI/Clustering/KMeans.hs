@@ -10,28 +10,27 @@ module AI.Clustering.KMeans
 
     -- * Initialization methods
     , Method(..)
+    , sumSquares
 
     -- * References
     -- $references
     ) where
 
 import Control.Monad (forM_)
-import Control.Monad.Primitive (PrimMonad, PrimState)
-import qualified Data.Matrix.Unboxed as MU
+import Control.Monad.ST (runST)
+import Data.List (foldl')
 import Data.Matrix.Generic (unsafeTakeRow)
+import System.Random.MWC (Gen, initialize)
+import qualified Data.Matrix.Unboxed as MU
 import qualified Data.Matrix.Unboxed.Mutable as MM
-import Data.Ord (comparing)
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Mutable as VM
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
-import Data.List (minimumBy, foldl')
-import System.Random.MWC (Gen, initialize)
-import Control.Monad.ST (runST)
 
+import AI.Clustering.KMeans.Internal (forgy, kmeansPP)
 import AI.Clustering.KMeans.Types
-import AI.Clustering.KMeans.Internal (sumSquares, forgy, kmeansPP)
 
 -- | Perform K-means clustering
 kmeans :: Int                -- ^ The number of clusters
@@ -53,7 +52,7 @@ kmeans k mat opts
         gen <- initialize $ kmeansSeed opts
         case kmeansMethod opts of
             Forgy -> forgy gen k dat fn
-            KMeansPP -> kmeansPP gen k dat fn
+            KMeansPP distFun -> kmeansPP gen k dat fn distFun
             Centers c -> return c
 {-# INLINE kmeans #-}
 
@@ -77,7 +76,7 @@ kmeansBy k dat fn opts
         gen <- initialize $ kmeansSeed opts
         case kmeansMethod opts of
             Forgy -> forgy gen k dat fn
-            KMeansPP -> kmeansPP gen k dat fn
+            KMeansPP distFun -> kmeansPP gen k dat fn distFun
             Centers c -> return c
 {-# INLINE kmeansBy #-}
 

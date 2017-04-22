@@ -5,17 +5,18 @@ module Test.KMeans
     ) where
 
 import Control.Monad
-import qualified Data.Matrix.Unboxed as MU
-import qualified Data.Vector.Unboxed as V
 import Data.List
 import RlangQQ
 import System.Random.MWC
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
+import qualified Data.Matrix.Unboxed as MU
+import qualified Data.Vector.Unboxed as V
 
 import AI.Clustering.KMeans
 import AI.Clustering.KMeans.Internal
+import AI.Clustering.KMeans.Types
 
 import Test.Utils
 
@@ -45,7 +46,7 @@ testKMeans = do
         dat = V.enumFromN 0 $ MU.rows mat
         fn = MU.takeRow mat
 
-    centers <- kmeansPP g k dat fn
+    centers <- kmeansPP g k dat fn sumSquares
 
     r <- rKmeans d (MU.toList mat) (MU.toList centers)
     let test = sort $ map sort $ decode result xs

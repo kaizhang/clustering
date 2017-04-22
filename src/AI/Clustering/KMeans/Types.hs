@@ -15,11 +15,12 @@ module AI.Clustering.KMeans.Types
     , defaultKMeansOpts
     , KMeans(..)
     , Method(..)
+    , sumSquares, cosSimilarity
     ) where
 
+import Data.Word (Word32)
 import qualified Data.Matrix.Unboxed as MU
 import qualified Data.Vector.Unboxed as U
-import Data.Word (Word32)
 
 data KMeansOpts = KMeansOpts
     { kmeansMethod :: Method
@@ -30,18 +31,39 @@ data KMeansOpts = KMeansOpts
 
 -- | Default options.
 -- > defaultKMeansOpts = KMeansOpts
--- >     { kmeansMethod = KMeansPP
+-- >     { kmeansMethod = KMeansPP sumSquares
 -- >     , kmeansSeed = U.fromList [1,2,3,4,5,6,7]
 -- >     , kmeansClusters = True
 -- >     , kmeansMaxIter = 10
 -- >     }
 defaultKMeansOpts :: KMeansOpts
 defaultKMeansOpts = KMeansOpts
-    { kmeansMethod = KMeansPP
+    { kmeansMethod = KMeansPP sumSquares
     , kmeansSeed = U.fromList [1,2,3,4,5,6,7]
     , kmeansClusters = True
     , kmeansMaxIter = 10
     }
+
+sumSquares :: U.Vector Double -> U.Vector Double -> Double
+sumSquares xs = U.sum . U.zipWith (\x y -> (x - y) * (x - y)) xs
+{-# INLINE sumSquares #-}
+
+cosSimilarity :: U.Vector Double -> U.Vector Double -> Double
+cosSimilarity vec1 vec2 =
+    let dp = dotProduct vec1 vec2
+        mag = (magnitude vec1 * magnitude vec2)
+    in dp / mag
+{-# INLINE cosSimilarity #-}
+
+dotProduct :: U.Vector Double -> U.Vector Double -> Double
+dotProduct = (U.sum .) . U.zipWith (*)
+
+magnitude :: U.Vector Double -> Double
+magnitude =
+    sqrt . U.foldl acc 0
+    where
+      acc :: Double -> Double -> Double
+      acc cur new = cur + (new ** 2)
 
 -- | Results from running kmeans
 data KMeans a = KMeans
@@ -53,8 +75,9 @@ data KMeans a = KMeans
     } deriving (Show)
 
 -- | Different initialization methods
-data Method = Forgy    -- ^ The Forgy method randomly chooses k unique
-                       -- observations from the data set and uses these
-                       -- as the initial means.
-            | KMeansPP -- ^ K-means++ algorithm.
-            | Centers (MU.Matrix Double)   -- ^ Provide a set of k centroids
+data Method =
+    Forgy    -- ^ The Forgy method randomly chooses k unique
+             -- observations from the data set and uses these
+             -- as the initial means.
+    | KMeansPP (U.Vector Double -> U.Vector Double -> Double) -- ^ K-means++ algorithm.
+    | Centers (MU.Matrix Double)   -- ^ Provide a set of k centroids
