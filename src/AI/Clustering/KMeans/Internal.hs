@@ -5,17 +5,16 @@ module AI.Clustering.KMeans.Internal
 {-# WARNING "To be used by developer only" #-}
     ( forgy
     , kmeansPP
-    , sumSquares
     ) where
 
 import           Control.Monad.Primitive         (PrimMonad, PrimState)
-import qualified Data.HashSet                    as S
 import           Data.List                       (nub)
+import           System.Random.MWC               (Gen, uniformR)
+import           System.Random.MWC.Distributions (categorical)
+import qualified Data.HashSet                    as S
 import qualified Data.Matrix.Unboxed             as MU
 import qualified Data.Vector.Generic             as G
 import qualified Data.Vector.Unboxed             as U
-import           System.Random.MWC               (Gen, uniformR)
-import           System.Random.MWC.Distributions (categorical)
 
 
 forgy :: (PrimMonad m, G.Vector v a)
@@ -41,8 +40,9 @@ kmeansPP :: (PrimMonad m, G.Vector v a)
          -> Int                     -- ^ The number of clusters
          -> v a                     -- ^ Input data
          -> (a -> U.Vector Double)  -- ^ Feature extraction function
+         -> (U.Vector Double -> U.Vector Double -> Double) -- ^ Distance function
          -> m (MU.Matrix Double)
-kmeansPP g k dat fn
+kmeansPP g k dat fn distFun
     | k > n = error "k is larger than sample size"
     | otherwise = do
         c1 <- uniformR (0,n-1) g
@@ -52,15 +52,11 @@ kmeansPP g k dat fn
         | k' == k = return $ MU.fromRows $ map (fn . G.unsafeIndex dat) centers
         | otherwise = do
             c' <- flip categorical g $ U.generate n $ \i -> minimum $
-                map (\c -> sumSquares (fn $ G.unsafeIndex dat i) (fn $ G.unsafeIndex dat c))
+                map (\c -> distFun (fn $ G.unsafeIndex dat i) (fn $ G.unsafeIndex dat c))
                 centers
             loop (c':centers) (k'+1)
     n = G.length dat
 {-# INLINE kmeansPP #-}
-
-sumSquares :: U.Vector Double -> U.Vector Double -> Double
-sumSquares xs = U.sum . U.zipWith (\x y -> (x - y) * (x - y)) xs
-{-# INLINE sumSquares #-}
 
 -- | Generate N non-duplicated uniformly distributed random variables in a given range.
 uniformRN :: PrimMonad m => (Int, Int) -> Int -> Gen (PrimState m) -> m [Int]
