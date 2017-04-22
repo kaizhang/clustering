@@ -10,7 +10,7 @@ module AI.Clustering.KMeans
 
     -- * Initialization methods
     , Method(..)
-    , sumSquares
+    , sumSquares, cosSimilarity
 
     -- * References
     -- $references
