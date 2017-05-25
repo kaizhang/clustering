@@ -38,7 +38,7 @@ data KMeansOpts = KMeansOpts
 defaultKMeansOpts :: KMeansOpts
 defaultKMeansOpts = KMeansOpts
     { kmeansMethod = KMeansPP
-    , kmeansSeed = U.fromList [1,2,3,4,5,6,7]
+    , kmeansSeed = U.fromList [2341,2342,3934,425,2345,80006,2343,234491,124,729]
     , kmeansClusters = True
     , kmeansMaxIter = 10
     }

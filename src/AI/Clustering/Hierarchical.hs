@@ -43,6 +43,7 @@ module AI.Clustering.Hierarchical
     , size
     , Linkage(..)
     , hclust
+    , normalize
     , cutAt
     , flatten
     , drawDendrogram
