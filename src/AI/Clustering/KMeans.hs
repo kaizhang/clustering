@@ -11,6 +11,8 @@ module AI.Clustering.KMeans
     -- * Initialization methods
     , Method(..)
 
+    , decode
+
     -- * References
     -- $references
     ) where

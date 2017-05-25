@@ -40,7 +40,7 @@ defaultKMeansOpts = KMeansOpts
     { kmeansMethod = KMeansPP
     , kmeansSeed = U.fromList [2341,2342,3934,425,2345,80006,2343,234491,124,729]
     , kmeansClusters = True
-    , kmeansMaxIter = 10
+    , kmeansMaxIter = 10000
     }
 
 -- | Results from running kmeans

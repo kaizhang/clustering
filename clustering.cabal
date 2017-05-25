@@ -14,7 +14,7 @@ license:             MIT
 license-file:        LICENSE
 author:              Kai Zhang
 maintainer:          kai@kzhang.org
-copyright:           (c) 2015 Kai Zhang
+copyright:           (c) 2015-2017 Kai Zhang
 category:            Math
 build-type:          Simple
 cabal-version:       >=1.10
@@ -66,7 +66,7 @@ test-suite test
     , clustering
     , hierarchical-clustering
     , split
-    , Rlang-QQ
+    , inline-r
 
 benchmark bench
   type: exitcode-stdio-1.0

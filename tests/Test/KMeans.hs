@@ -1,23 +1,31 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE QuasiQuotes     #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 module Test.KMeans
     ( tests
     ) where
 
-import Control.Monad
-import qualified Data.Matrix.Unboxed as MU
-import qualified Data.Vector.Unboxed as V
-import Data.List
-import RlangQQ
-import System.Random.MWC
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import           Control.Monad
+import           Data.Int                      (Int32)
+import           Data.List
+import qualified Data.Matrix.Unboxed           as MU
+import           Data.Maybe
+import qualified Data.Vector.SEXP              as S
+import qualified Data.Vector.Unboxed           as V
+import qualified Foreign.R                     as R
+import qualified Foreign.R.Type                as R
+import qualified H.Prelude                     as H
+import           Language.R.HExp
+import           Language.R.QQ
+import           System.Random.MWC
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
 
-import AI.Clustering.KMeans
-import AI.Clustering.KMeans.Internal
+import           AI.Clustering.KMeans
+import           AI.Clustering.KMeans.Internal
 
-import Test.Utils
+import           Test.Utils
 
 tests :: TestTree
 tests = testGroup "KMeans:"
@@ -25,13 +33,14 @@ tests = testGroup "KMeans:"
     ]
 
 rKmeans :: Int -> [Double] -> [Double] -> IO [Int]
-rKmeans n dat center = do
-    o <- [r| x <- matrix(hs_dat, ncol=hs_n,byrow=T);
-             y <- matrix(hs_center, ncol=hs_n,byrow=T);
-             hs_result <- kmeans(x,y,iter.max=1000000,algorithm="Lloyd")$cluster;
-         |]
-    let x = Label :: Label "result"
-    return $ o .!. x
+rKmeans n' dat center = fmap (map (fromIntegral :: Int32 -> Int)) $ H.runRegion $ do
+    xxx <- [r| x <- matrix(dat_hs, ncol=n_hs,byrow=T);
+             y <- matrix(center_hs, ncol=n_hs,byrow=T);
+             kmeans(x,y,iter.max=10000,algorithm="Lloyd")$cluster
+    |]
+    return $ H.fromSEXP $ H.cast R.SInt xxx
+  where
+    n = fromIntegral n' :: Double
 
 testKMeans :: Assertion
 testKMeans = do
@@ -45,13 +54,12 @@ testKMeans = do
         dat = V.enumFromN 0 $ MU.rows mat
         fn = MU.takeRow mat
 
-    centers <- kmeansPP g k dat fn
+    init_centers <- kmeansPP g k dat fn
 
-    r <- rKmeans d (MU.toList mat) (MU.toList centers)
-    let test = sort $ map sort $ decode result xs
-        result = kmeansWith centers dat fn
-        true = sort $ map sort $ decode result{_clusters=V.fromList $ map (subtract 1) r} xs
-        show' xs = unlines $ map (show . map (unwords . map show . V.toList)) xs
+    result_r <- rKmeans d (MU.toList mat) (MU.toList init_centers)
 
-    assertBool ("Expect: " ++ show' true ++ "\nBut saw: " ++ show' test) $
-        test == true
+    let result = sort $ map sort $ fromJust $ clusters $ kmeans k mat defaultKMeansOpts{kmeansMethod=Centers init_centers}
+        true = sort $ map sort $ decode (V.fromList $ map (subtract 1) result_r) xs
+
+    assertBool ("Expect: " ++ show (map length true) ++ "\nBut saw: " ++ show (map length result)) $
+        result == true
