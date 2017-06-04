@@ -50,6 +50,7 @@ data KMeans a = KMeans
                                     -- point is allocated.
     , centers :: MU.Matrix Double  -- ^ A matrix of cluster centers.
     , clusters :: Maybe [[a]]
+    , sse :: Double                -- ^ the sum of squared error (SSE)
     } deriving (Show)
 
 -- | Different initialization methods

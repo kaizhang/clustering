@@ -42,10 +42,10 @@ kmeans :: Int                -- ^ The number of clusters
        -> KMeans (U.Vector Double)
 kmeans k mat opts
     | containNaN = error "Input data contains NaN."
-    | otherwise = KMeans member cs grps
+    | otherwise = KMeans member cs grps sse'
   where
     containNaN =  U.any isNaN $ MU.flatten mat
-    (member, cs) = kmeans' initial (kmeansMaxIter opts) dat fn
+    (member, cs, sse') = kmeans' initial (kmeansMaxIter opts) dat fn
     grps = if kmeansClusters opts
         then Just $ decode member $ MU.toRows mat
         else Nothing
@@ -68,10 +68,10 @@ kmeansBy :: G.Vector v a
          -> KMeans a
 kmeansBy k dat fn opts
     | containNaN = error "Input data contains NaN."
-    | otherwise = KMeans member cs grps
+    | otherwise = KMeans member cs grps sse'
   where
     containNaN = G.foldl (\acc x -> acc || U.any isNaN (fn x)) False dat
-    (member, cs) = kmeans' initial (kmeansMaxIter opts) dat fn
+    (member, cs, sse') = kmeans' initial (kmeansMaxIter opts) dat fn
     grps = if kmeansClusters opts
         then Just $ decode member $ G.toList dat
         else Nothing
@@ -89,10 +89,11 @@ kmeans' :: G.Vector v a
         -> Int                      -- ^ Max inter
         -> v a                      -- ^ Input data
         -> (a -> U.Vector Double)   -- ^ Feature extraction function
-        -> (U.Vector Int, MU.Matrix Double)
+        -> (U.Vector Int, MU.Matrix Double, Double)
 kmeans' initial maxiter dat fn
     | U.length (fn $ G.head dat) /= d = error "Dimension mismatched."
-    | otherwise = (member, centers)
+    | otherwise = (member, centers, U.sum $ U.imap ( \i x -> sqrt $ sumSquares
+        (fn $ dat G.! i) (centers `MU.takeRow` x) ) member )
   where
     (member, centers) = loop 0 initial U.empty
     loop !iter means membership
@@ -140,16 +141,6 @@ decode member xs = V.toList $ V.create $ do
   where
     n = U.maximum member + 1
 {-# INLINE decode #-}
-
-{-
--- Compute within-cluster sum of squares
-withinSS :: KMeans -> MU.Matrix Double -> [Double]
-withinSS result mat = zipWith f (decode result [0 .. MU.rows mat-1]) .
-                          MU.toRows . _centers $ result
-  where
-    f c center = foldl' (+) 0 $ map (sumSquares center . MU.takeRow mat) c
-    -}
-
 
 -- $references
 --
