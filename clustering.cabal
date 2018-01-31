@@ -1,5 +1,5 @@
 name:                clustering
-version:             0.4.0-dev
+version:             0.4.0
 synopsis:            High performance clustering algorithms
 description:
   Following clutering methods are included in this library:
@@ -14,7 +14,7 @@ license:             MIT
 license-file:        LICENSE
 author:              Kai Zhang
 maintainer:          kai@kzhang.org
-copyright:           (c) 2015-2017 Kai Zhang
+copyright:           (c) 2015-2018 Kai Zhang
 category:            Math
 build-type:          Simple
 cabal-version:       >=1.10
