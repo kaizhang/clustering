@@ -1,5 +1,5 @@
 name:                clustering
-version:             0.4.0
+version:             0.4.1
 synopsis:            High performance clustering algorithms
 description:
   Following clutering methods are included in this library:
@@ -33,7 +33,7 @@ library
       base >=4.0 && <5.0
     , binary
     , containers
-    , matrices >=0.4.0
+    , matrices >=0.5.0
     , mwc-random
     , parallel
     , primitive

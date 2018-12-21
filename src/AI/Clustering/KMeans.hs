@@ -20,7 +20,7 @@ module AI.Clustering.KMeans
 import Control.Monad (forM_)
 import Control.Monad.Primitive (PrimMonad, PrimState)
 import qualified Data.Matrix.Unboxed as MU
-import Data.Matrix.Generic (unsafeTakeRow)
+import Data.Matrix.Class (unsafeTakeRow)
 import qualified Data.Matrix.Unboxed.Mutable as MM
 import Data.Ord (comparing)
 import qualified Data.Vector as V

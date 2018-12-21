@@ -5,8 +5,8 @@ module AI.Clustering.Utils
 
 import Control.Monad (forM_)
 import qualified Data.Vector.Generic as G
-import qualified Data.Matrix.Generic as M
-import qualified Data.Matrix.Generic.Mutable as MM
+import qualified Data.Matrix.Class as M
+import qualified Data.Matrix.Class.Mutable as MM
 
 -- | rearrange the rows of a matrix
 orderBy :: (G.Vector v1 Int, M.Matrix m v2 a) => v1 Int -> m v2 a -> m v2 a
